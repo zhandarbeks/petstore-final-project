@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package adoption;
+
+import "google/protobuf/timestamp.proto"; // If you use Timestamp
+
+option go_package = "github.com/zhandarbeks/petstore-final-project/genprotos/adoption";
+
+service AdoptionService {
+  rpc CreateAdoptionApplication(CreateAdoptionApplicationRequest) returns (AdoptionApplicationResponse);
+  rpc GetAdoptionApplication(GetAdoptionApplicationRequest) returns (AdoptionApplicationResponse);
+  rpc UpdateAdoptionApplicationStatus(UpdateAdoptionApplicationStatusRequest) returns (AdoptionApplicationResponse);
+  rpc ListUserAdoptionApplications(ListUserAdoptionApplicationsRequest) returns (ListAdoptionApplicationsResponse);
+}
+
+enum ApplicationStatus {
+  APPLICATION_STATUS_UNSPECIFIED = 0;
+  PENDING_REVIEW = 1;
+  APPROVED = 2;
+  REJECTED = 3;
+  CANCELLED_BY_USER = 5;
+}
+
+message AdoptionApplication {
+  string id = 1;
+  string user_id = 2;
+  string pet_id = 3;
+  ApplicationStatus status = 4;
+  string application_notes = 5;
+  string review_notes = 6;
+  google.protobuf.Timestamp created_at = 7; // Or use string if preferred
+  google.protobuf.Timestamp updated_at = 8; // Or use string
+}
+
+message CreateAdoptionApplicationRequest {
+  string user_id = 1;
+  string pet_id = 2;
+  string application_notes = 3;
+}
+
+message GetAdoptionApplicationRequest {
+  string application_id = 1;
+}
+
+message UpdateAdoptionApplicationStatusRequest {
+  string application_id = 1;
+  ApplicationStatus new_status = 2;
+  string review_notes = 3;
+}
+
+message ListUserAdoptionApplicationsRequest {
+  string user_id = 1;
+  optional int32 page = 2;
+  optional int32 limit = 3;
+  optional ApplicationStatus status_filter = 4;
+}
+
+message ListAdoptionApplicationsResponse {
+  repeated AdoptionApplication applications = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message AdoptionApplicationResponse {
+  AdoptionApplication application = 1;
+}

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/zhandarbeks/petstore-final-project/genprotos/user";
+
+service UserService {
+  rpc RegisterUser(RegisterUserRequest) returns (UserResponse);
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+  rpc GetUser(GetUserRequest) returns (UserResponse);
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (EmptyResponse);
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string full_name = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message RegisterUserRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+  string full_name = 4;
+}
+
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  User user = 1;
+  string access_token = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  optional string username = 2;
+  optional string full_name = 3;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+    string user_id = 1;
+}
+
+message EmptyResponse {}

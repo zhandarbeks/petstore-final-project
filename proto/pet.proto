@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package pet;
+
+option go_package = "github.com/zhandarbeks/petstore-final-project/genprotos/pet";
+
+service PetService {
+  rpc CreatePet(CreatePetRequest) returns (PetResponse);
+  rpc GetPet(GetPetRequest) returns (PetResponse);
+  rpc UpdatePet(UpdatePetRequest) returns (PetResponse);
+  rpc DeletePet(DeletePetRequest) returns (EmptyResponse);
+  rpc ListPets(ListPetsRequest) returns (ListPetsResponse);
+  rpc UpdatePetAdoptionStatus(UpdatePetAdoptionStatusRequest) returns (PetResponse);
+}
+
+enum AdoptionStatus {
+  ADOPTION_STATUS_UNSPECIFIED = 0;
+  AVAILABLE = 1;
+  PENDING_ADOPTION = 2;
+  ADOPTED = 3;
+}
+
+message Pet {
+  string id = 1;
+  string name = 2;
+  string species = 3;
+  string breed = 4;
+  int32 age = 5;
+  string description = 6;
+  AdoptionStatus adoption_status = 7;
+  string listed_by_user_id = 8;
+  string adopted_by_user_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  repeated string image_urls = 12;
+}
+
+message CreatePetRequest {
+  string name = 1;
+  string species = 2;
+  string breed = 3;
+  int32 age = 4;
+  string description = 5;
+  string listed_by_user_id = 6;
+  repeated string image_urls = 7;
+}
+
+message GetPetRequest {
+  string pet_id = 1;
+}
+
+message UpdatePetRequest {
+  string pet_id = 1;
+  optional string name = 2;
+  optional string species = 3;
+  optional string breed = 4;
+  optional int32 age = 5;
+  optional string description = 6;
+  repeated string image_urls = 7;
+}
+
+message DeletePetRequest {
+  string pet_id = 1;
+}
+
+message ListPetsRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+  optional string species_filter = 3;
+  optional AdoptionStatus status_filter = 4;
+}
+
+message ListPetsResponse {
+  repeated Pet pets = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message UpdatePetAdoptionStatusRequest {
+  string pet_id = 1;
+  AdoptionStatus new_status = 2;
+  string adopter_user_id = 3;
+}
+
+message PetResponse {
+  Pet pet = 1;
+}
+
+message EmptyResponse {}
