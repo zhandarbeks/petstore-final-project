@@ -1,0 +1,177 @@
+# version: '3.8' # This line is obsolete and can be removed
+
+services:
+  # MongoDB Service
+  mongo_db:
+    image: mongo:latest
+    container_name: petstore_mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - petstore_network
+    restart: unless-stopped
+
+  # Redis Service
+  redis_db:
+    image: redis:latest
+    container_name: petstore_redis_db
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - petstore_network
+    restart: unless-stopped
+
+  # NATS Service
+  nats:
+    image: nats:latest
+    container_name: petstore_nats
+    ports:
+      - "4222:4222" # Client port
+      - "8222:8222" # HTTP monitoring port
+    networks:
+      - petstore_network
+    restart: unless-stopped
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    container_name: petstore_user_service
+    ports:
+      - "${USER_SERVICE_HOST_PORT:-50051}:${USER_SERVICE_CONTAINER_PORT:-50051}"
+    environment:
+      - USER_SERVICE_PORT=${USER_SERVICE_CONTAINER_PORT:-:50051}
+      - MONGO_URI=mongodb://mongo_db:27017/petstore_users
+      - REDIS_ADDR=redis_db:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB_USERS:-0}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your_default_strong_jwt_secret_key}
+      - TOKEN_EXPIRY_MINUTES=${TOKEN_EXPIRY_MINUTES:-60}
+    depends_on:
+      - mongo_db
+      - redis_db
+    networks:
+      - petstore_network
+    restart: unless-stopped
+    # env_file:
+    #   - ./.env
+
+  # Pet Service
+  pet-service:
+    build:
+      context: .
+      dockerfile: ./pet-service/Dockerfile
+    container_name: petstore_pet_service
+    ports:
+      - "${PET_SERVICE_HOST_PORT:-50052}:${PET_SERVICE_CONTAINER_PORT:-50052}"
+    environment:
+      - PET_SERVICE_PORT=${PET_SERVICE_CONTAINER_PORT:-:50052}
+      - MONGO_URI_PETS=mongodb://mongo_db:27017/petstore_pets
+      - REDIS_ADDR_PETS=redis_db:6379
+      - REDIS_PASSWORD_PETS=${REDIS_PASSWORD:-}
+      - REDIS_DB_PETS=${REDIS_DB_PETS:-1}
+    depends_on:
+      - mongo_db
+      - redis_db
+      # - user-service # If pet-service needs to call user-service
+    networks:
+      - petstore_network
+    restart: unless-stopped
+    # env_file:
+    #   - ./.env
+
+  # Adoption Service
+  adoption-service:
+    build:
+      context: .
+      dockerfile: ./adoption-service/Dockerfile
+    container_name: petstore_adoption_service
+    ports:
+      - "${ADOPTION_SERVICE_HOST_PORT:-50053}:${ADOPTION_SERVICE_CONTAINER_PORT:-50053}"
+    environment:
+      - ADOPTION_SERVICE_PORT=${ADOPTION_SERVICE_CONTAINER_PORT:-:50053}
+      - MONGO_URI_ADOPTIONS=mongodb://mongo_db:27017/petstore_adoptions
+      - REDIS_ADDR_ADOPTIONS=redis_db:6379
+      - REDIS_PASSWORD_ADOPTIONS=${REDIS_PASSWORD:-}
+      - REDIS_DB_ADOPTIONS=${REDIS_DB_ADOPTIONS:-2}
+      - NATS_URL=nats://nats:4222
+      # - USER_SERVICE_GRPC_URL=user-service:50051
+      # - PET_SERVICE_GRPC_URL=pet-service:50052
+    depends_on:
+      - mongo_db
+      - redis_db
+      - nats
+      # - user-service
+      # - pet-service
+    networks:
+      - petstore_network
+    restart: unless-stopped
+    # env_file:
+    #   - ./.env
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./notification-service/Dockerfile # Path to Notification Service Dockerfile
+    container_name: petstore_notification_service
+    # No ports exposed by default unless it runs its own server (e.g., for health checks)
+    # ports:
+    #  - "${NOTIFICATION_SERVICE_HOST_PORT:-50054}:${NOTIFICATION_SERVICE_CONTAINER_PORT:-50054}"
+    environment:
+      # - NOTIFICATION_SERVICE_PORT=${NOTIFICATION_SERVICE_CONTAINER_PORT:-:50054} # If it has its own server
+      - NATS_URL=nats://nats:4222
+      - USER_SERVICE_GRPC_URL=user-service:50051 # For fetching user email
+      - PET_SERVICE_GRPC_URL=pet-service:50052   # For fetching pet details
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com} # IMPORTANT: Set in .env or here
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-fergumz.70@gmail.com} # IMPORTANT: Set in .env or here
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-cxnfodqgjvbwufsn} # IMPORTANT: Set in .env or here
+      - SENDER_EMAIL=${SENDER_EMAIL:-fergumz.70@gmail.com}
+    depends_on:
+      - nats         # Depends on NATS to consume messages
+      - user-service # Depends on user-service for gRPC calls
+      - pet-service  # Depends on pet-service for gRPC calls
+    networks:
+      - petstore_network
+    restart: unless-stopped
+    # env_file:
+    #   - ./.env
+
+  # --- Add api-gateway here later ---
+  # api-gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: ./api-gateway/Dockerfile
+  #   container_name: petstore_api_gateway
+  #   ports:
+  #     - "${API_GATEWAY_HOST_PORT:-8080}:${API_GATEWAY_CONTAINER_PORT:-8080}"
+  #   environment:
+  #     - API_GATEWAY_PORT=${API_GATEWAY_CONTAINER_PORT:-:8080}
+  #     - USER_SERVICE_GRPC_URL=user-service:50051
+  #     - PET_SERVICE_GRPC_URL=pet-service:50052
+  #     - ADOPTION_SERVICE_GRPC_URL=adoption-service:50053
+  #   depends_on:
+  #     - user-service
+  #     - pet-service
+  #     - adoption-service
+  #   networks:
+  #     - petstore_network
+  #   restart: unless-stopped
+  #   # env_file:
+  #   #   - ./.env
+
+# Named volumes for data persistence
+volumes:
+  mongo_data:
+  redis_data:
+
+# Custom network for services to communicate
+networks:
+  petstore_network:
+    driver: bridge
