@@ -118,7 +118,7 @@ services:
   notification-service:
     build:
       context: .
-      dockerfile: ./notification-service/Dockerfile # Path to Notification Service Dockerfile
+      dockerfile: ./notification-service/Dockerfile
     container_name: petstore_notification_service
     # No ports exposed by default unless it runs its own server (e.g., for health checks)
     # ports:
@@ -128,43 +128,46 @@ services:
       - NATS_URL=nats://nats:4222
       - USER_SERVICE_GRPC_URL=user-service:50051 # For fetching user email
       - PET_SERVICE_GRPC_URL=pet-service:50052   # For fetching pet details
-      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com} # IMPORTANT: Set in .env or here
+      - SMTP_HOST=${SMTP_HOST:-smtp.example.com}
       - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USERNAME=${SMTP_USERNAME:-fergumz.70@gmail.com} # IMPORTANT: Set in .env or here
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-cxnfodqgjvbwufsn} # IMPORTANT: Set in .env or here
-      - SENDER_EMAIL=${SENDER_EMAIL:-fergumz.70@gmail.com}
+      - SMTP_USERNAME=${SMTP_USERNAME:-user@example.com}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-your_smtp_password}
+      - SENDER_EMAIL=${SENDER_EMAIL:-noreply@petstore.example}
     depends_on:
-      - nats         # Depends on NATS to consume messages
-      - user-service # Depends on user-service for gRPC calls
-      - pet-service  # Depends on pet-service for gRPC calls
+      - nats
+      - user-service
+      - pet-service
     networks:
       - petstore_network
     restart: unless-stopped
     # env_file:
     #   - ./.env
 
-  # --- Add api-gateway here later ---
-  # api-gateway:
-  #   build:
-  #     context: .
-  #     dockerfile: ./api-gateway/Dockerfile
-  #   container_name: petstore_api_gateway
-  #   ports:
-  #     - "${API_GATEWAY_HOST_PORT:-8080}:${API_GATEWAY_CONTAINER_PORT:-8080}"
-  #   environment:
-  #     - API_GATEWAY_PORT=${API_GATEWAY_CONTAINER_PORT:-:8080}
-  #     - USER_SERVICE_GRPC_URL=user-service:50051
-  #     - PET_SERVICE_GRPC_URL=pet-service:50052
-  #     - ADOPTION_SERVICE_GRPC_URL=adoption-service:50053
-  #   depends_on:
-  #     - user-service
-  #     - pet-service
-  #     - adoption-service
-  #   networks:
-  #     - petstore_network
-  #   restart: unless-stopped
-  #   # env_file:
-  #   #   - ./.env
+  # API Gateway
+  api-gateway:
+    build:
+      context: . # Build context is the root of the project
+      dockerfile: ./api-gateway/Dockerfile # Path to the API Gateway Dockerfile
+    container_name: petstore_api_gateway
+    ports:
+      - "${API_GATEWAY_HOST_PORT:-8080}:${API_GATEWAY_CONTAINER_PORT:-8080}"
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_CONTAINER_PORT:-:8080}
+      - USER_SERVICE_GRPC_URL=user-service:50051
+      - PET_SERVICE_GRPC_URL=pet-service:50052
+      - ADOPTION_SERVICE_GRPC_URL=adoption-service:50053
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your_default_strong_jwt_secret_key} # Should match user-service if gateway validates
+      - GIN_MODE=${GIN_MODE:-debug} # Default to debug mode for Gin
+    depends_on:
+      - user-service
+      - pet-service
+      - adoption-service
+      # NATS is not directly called by API gateway, but other services it depends on might need NATS
+    networks:
+      - petstore_network
+    restart: unless-stopped
+    # env_file:
+    #   - ./.env
 
 # Named volumes for data persistence
 volumes:

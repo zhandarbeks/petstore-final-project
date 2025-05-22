@@ -9,8 +9,6 @@ import (
 	"github.com/zhandarbeks/petstore-final-project/notification-service/internal/client"    // For UserServiceClient, PetServiceClient
 	"github.com/zhandarbeks/petstore-final-project/notification-service/internal/consumer"  // For event structs
 	"github.com/zhandarbeks/petstore-final-project/notification-service/internal/email"     // For EmailSender
-	pbPet "github.com/zhandarbeks/petstore-final-project/genprotos/pet"                   // For Pet details
-	pbUser "github.com/zhandarbeks/petstore-final-project/genprotos/user"                  // For User details
 )
 
 // NotificationService handles the business logic for processing events and sending notifications.

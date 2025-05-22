@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package adoption;
 
-import "google/protobuf/timestamp.proto"; // If you use Timestamp
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/zhandarbeks/petstore-final-project/genprotos/adoption";
 
